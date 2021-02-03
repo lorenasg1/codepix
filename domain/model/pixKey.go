@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	"github.com/asaskevich/govalidator"
@@ -13,51 +14,52 @@ type PixKeyRepositoryInterface interface {
 	AddBank(bank *Bank) error
 	AddAccount(account *Account) error
 	FindAccount(id string) (*Account, error)
+	FindBank(id string) (*Bank, error)
+}
+
+func init() {
+	govalidator.SetFieldsRequiredByDefault(true)
 }
 
 type PixKey struct {
 	Base      `valid:"required"`
-	Kind      string   `json:"kind" valid:"notnull"`
-	Key       string   `json:"key" valid:"notnull"`
-	AccountID string   `json:"account_id: valid:"notnull"`
+	Kind      string   `json:"kind" gorm:"type:varchar(20)" valid:"notnull"`
+	Key       string   `json:"key" gorm:"type:varchar(255)" valid:"notnull"`
+	AccountID string   `gorm:"column:account_id;type:uuid;not null" valid:"-"`
 	Account   *Account `valid:"-"`
-	Status    string   `json:"status" valid:"notnull"`
+	Status    string   `json:"status" gorm:"type:varchar(20)" valid:"notnull"`
 }
 
 func (pixKey *PixKey) isValid() error {
 	_, err := govalidator.ValidateStruct(pixKey)
 
 	if pixKey.Kind != "email" && pixKey.Kind != "cpf" {
-		return errors.New(text: "Invalid type of key")
+		return errors.New("invalid type of key")
 	}
 
 	if pixKey.Status != "active" && pixKey.Status != "inactive" {
-		return errors.New(text: "Invalid status")
+		return errors.New("invalid status")
 	}
 
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func NewPixKey(kind string, key string, account *Account) (*PixKey, error) {
+func NewPixKey(kind string, account *Account, key string) (*PixKey, error) {
 	pixKey := PixKey{
 		Kind:      kind,
 		Key:       key,
-		AccountID: "",
-		Account:   nil,
-		Status:    "",
+		Account:   account,
+		AccountID: account.ID,
+		Status:    "active",
 	}
-
 	pixKey.ID = uuid.NewV4().String()
 	pixKey.CreatedAt = time.Now()
-
 	err := pixKey.isValid()
 	if err != nil {
 		return nil, err
 	}
-
 	return &pixKey, nil
 }
