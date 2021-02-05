@@ -28,7 +28,7 @@ func NewKafkaProcessor(database *gorm.DB, producer *ckafka.Producer, deliveryCha
 
 func (k *KafkaProcessor) Consume() {
 	configMap := &ckafka.ConfigMap{
-		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
+		"rocessor.servers":  os.Getenv("KAFKA_rocessor_SERVERS"),
 		"group.id":          os.Getenv("KAFKA_CONSUMER_GROUP_ID"),
 		"auto.offset.reset": "earliest",
 	}
